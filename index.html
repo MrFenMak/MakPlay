@@ -150,7 +150,7 @@
   .review-date{font-size:11px;color:var(--muted);}
 
   .img-viewer{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:300;display:flex;align-items:center;justify-content:center;touch-action:pinch-zoom;}
-  .img-viewer img{max-width:96vw;max-height:92vh;object-fit:contain;}
+  .img-viewer img{max-width:96vw;max-height:92vh;object-fit:contain;transform-origin:center center;cursor:grab;transition:transform .05s linear;}
   .img-viewer .close-x{color:#fff;top:18px;right:20px;font-size:28px;}
 
   .star-picker{display:flex;gap:6px;font-size:30px;margin:10px 0;justify-content:center;}
@@ -190,7 +190,7 @@
 <div id="app">
   <header>
     <div class="brand">
-      <img id="logo-img" class="hidden">
+      <img id="logo-img" class="hidden" draggable="false" oncontextmenu="return false;" style="-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none;pointer-events:none;">
       <div id="logo-fallback" class="logo-fallback">M</div>
       <h2>Mak Play</h2>
       <button id="logo-edit-btn" class="logo-edit hidden">сменить</button>
@@ -219,6 +219,7 @@
     <div id="form-app">
       <h3 id="app-form-title">Новое приложение</h3>
       <div class="field"><label>Название</label><input id="app-name" class="text-input"></div>
+      <div class="field"><label>Автор (необязательно)</label><input id="app-author" class="text-input" placeholder="Например: твой ник"></div>
       <div class="field"><label>Раздел</label><select id="app-section" class="text-input"></select></div>
       <div class="field"><label>Иконка (картинка)</label>
         <div class="filepick"><input type="file" id="app-icon-file" accept="image/*"></div>
@@ -294,7 +295,10 @@
     <div class="detail-content">
       <div class="detail-head">
         <img id="detail-icon" class="detail-icon">
-        <h3 class="detail-name" id="detail-name"></h3>
+        <div>
+          <h3 class="detail-name" id="detail-name" style="margin-bottom:2px;"></h3>
+          <div id="detail-author" class="hidden" style="font-size:12px;color:var(--muted);"></div>
+        </div>
       </div>
       <div class="detail-tags-wrap" id="detail-tags-wrap">
         <span class="tags-row" id="detail-tags"></span>
@@ -362,8 +366,10 @@
 
 <!-- Fullscreen image viewer -->
 <div class="img-viewer hidden" id="img-viewer">
-  <button class="close-x" data-close>×</button>
-  <img id="img-viewer-img">
+  <button class="close-x" id="img-viewer-close">×</button>
+  <div id="img-viewer-stage" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;">
+    <img id="img-viewer-img" draggable="false">
+  </div>
 </div>
 
 <!-- Accounts -->
@@ -390,8 +396,8 @@
 /* ====================================================================
    НАСТРОЙКИ — ВСТАВЬ СВОИ ДАННЫЕ ИЗ SUPABASE СЮДА
 ==================================================================== */
-const SUPABASE_URL = "https://ccfekmcnwfvwdimpisem.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_28o8HVrzdwdJVBzCF17LcQ_i78jG8QJ";
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
 const ADMIN_USERNAME = "M_fen";
 const FAKE_EMAIL_DOMAIN = "makplay.local";
 
@@ -603,9 +609,22 @@ async function triggerAppAction(app){
     window.open(app.link_url, '_blank');
   } else {
     if(!app.file_url){ alert('У приложения пока нет файла'); return; }
-    const a = document.createElement('a');
-    a.href = app.file_url; a.download = app.file_name || app.name; a.target='_blank';
-    document.body.appendChild(a); a.click(); a.remove();
+    try{
+      const resp = await fetch(app.file_url);
+      if(!resp.ok) throw new Error('network');
+      const blob = await resp.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = app.file_name || app.name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
+    } catch(err){
+      // запасной вариант, если не получилось скачать через blob
+      const a = document.createElement('a');
+      a.href = app.file_url; a.download = app.file_name || app.name; a.target='_blank';
+      document.body.appendChild(a); a.click(); a.remove();
+    }
   }
 }
 
@@ -707,6 +726,7 @@ function openAppModal(appId){
     state.currentAppTags = [...(app.tags||[])];
     $('app-form-title').textContent = 'Изменить приложение';
     $('app-name').value = app.name;
+    $('app-author').value = app.author || '';
     $('app-section').value = app.section_id || '';
     $('app-desc').value = app.description || '';
     $('app-update-note').value = app.update_note || '';
@@ -720,7 +740,7 @@ function openAppModal(appId){
   } else {
     state.currentAppTags = [];
     $('app-form-title').textContent = 'Новое приложение';
-    $('app-name').value=''; $('app-section').value=''; $('app-desc').value=''; $('app-link-url').value='';
+    $('app-name').value=''; $('app-author').value=''; $('app-section').value=''; $('app-desc').value=''; $('app-link-url').value='';
     setAppType('file');
   }
   renderTagChips();
@@ -741,7 +761,9 @@ $('app-package-file').onchange = (e) => {
 };
 
 async function uploadToBucket(bucket, file){
-  const path = `${Date.now()}_${Math.random().toString(36).slice(2)}_${file.name}`;
+  const extMatch = file.name.match(/\.[a-zA-Z0-9]+$/);
+  const ext = extMatch ? extMatch[0] : '';
+  const path = `${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
   const { error } = await sb.storage.from(bucket).upload(path, file);
   if(error) throw error;
   const { data } = sb.storage.from(bucket).getPublicUrl(path);
@@ -757,6 +779,7 @@ $('save-app-btn').onclick = async () => {
   try{
     const payload = {
       name,
+      author: $('app-author').value.trim(),
       section_id: $('app-section').value || null,
       description: $('app-desc').value.trim(),
       tags: [...state.currentAppTags],
@@ -876,6 +899,12 @@ async function openDetailModal(appId){
 
   $('detail-icon').src = app.icon_url || '';
   $('detail-name').textContent = app.name;
+  if(app.author && app.author.trim()){
+    $('detail-author').textContent = 'Автор: ' + app.author;
+    show($('detail-author'));
+  } else {
+    hide($('detail-author'));
+  }
 
   const tags = app.tags || [];
   $('detail-tags').innerHTML = tags.map(t=>`<span class="tag-chip">${escapeHtml(t)}</span>`).join('');
@@ -1021,10 +1050,104 @@ $('save-review-btn').onclick = async () => {
 };
 
 /* ---------------- IMAGE VIEWER ---------------- */
+let imgViewerState = { scale:1, x:0, y:0, lastDist:null, lastMid:null, dragging:false, startX:0, startY:0 };
+
+function resetImgViewerTransform(){
+  imgViewerState.scale = 1; imgViewerState.x = 0; imgViewerState.y = 0;
+  applyImgViewerTransform();
+}
+function applyImgViewerTransform(){
+  const img = $('img-viewer-img');
+  img.style.transform = `translate(${imgViewerState.x}px, ${imgViewerState.y}px) scale(${imgViewerState.scale})`;
+}
+
 function openImgViewer(url){
   $('img-viewer-img').src = url;
+  resetImgViewerTransform();
   show($('img-viewer'));
 }
+function closeImgViewer(){ hide($('img-viewer')); }
+
+$('img-viewer-close').onclick = (e) => { e.stopPropagation(); closeImgViewer(); };
+$('img-viewer').addEventListener('click', (e) => { if(e.target.id === 'img-viewer') closeImgViewer(); });
+
+(function setupImgViewerGestures(){
+  const stage = $('img-viewer-stage');
+
+  function dist(t1, t2){ return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY); }
+  function mid(t1, t2){ return { x:(t1.clientX+t2.clientX)/2, y:(t1.clientY+t2.clientY)/2 }; }
+
+  stage.addEventListener('touchstart', (e) => {
+    if(e.touches.length === 2){
+      imgViewerState.lastDist = dist(e.touches[0], e.touches[1]);
+      imgViewerState.lastMid = mid(e.touches[0], e.touches[1]);
+      imgViewerState.dragging = false;
+    } else if(e.touches.length === 1){
+      imgViewerState.dragging = true;
+      imgViewerState.startX = e.touches[0].clientX - imgViewerState.x;
+      imgViewerState.startY = e.touches[0].clientY - imgViewerState.y;
+    }
+  }, { passive:true });
+
+  stage.addEventListener('touchmove', (e) => {
+    if(e.touches.length === 2){
+      e.preventDefault();
+      const newDist = dist(e.touches[0], e.touches[1]);
+      if(imgViewerState.lastDist){
+        const factor = newDist / imgViewerState.lastDist;
+        imgViewerState.scale = Math.min(5, Math.max(1, imgViewerState.scale * factor));
+      }
+      imgViewerState.lastDist = newDist;
+      applyImgViewerTransform();
+    } else if(e.touches.length === 1 && imgViewerState.dragging && imgViewerState.scale > 1){
+      e.preventDefault();
+      imgViewerState.x = e.touches[0].clientX - imgViewerState.startX;
+      imgViewerState.y = e.touches[0].clientY - imgViewerState.startY;
+      applyImgViewerTransform();
+    }
+  }, { passive:false });
+
+  stage.addEventListener('touchend', (e) => {
+    if(e.touches.length < 2) imgViewerState.lastDist = null;
+    if(e.touches.length === 0){
+      imgViewerState.dragging = false;
+      if(imgViewerState.scale <= 1.02) resetImgViewerTransform();
+    }
+  });
+
+  // double-tap to zoom (mobile) / double-click (desktop)
+  let lastTap = 0;
+  stage.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if(now - lastTap < 300){
+      if(imgViewerState.scale > 1) resetImgViewerTransform();
+      else { imgViewerState.scale = 2.2; applyImgViewerTransform(); }
+    }
+    lastTap = now;
+  });
+  $('img-viewer-img').addEventListener('dblclick', () => {
+    if(imgViewerState.scale > 1) resetImgViewerTransform();
+    else { imgViewerState.scale = 2.2; applyImgViewerTransform(); }
+  });
+
+  // desktop: drag to pan when zoomed, wheel to zoom
+  let mouseDragging = false, mStartX=0, mStartY=0;
+  stage.addEventListener('mousedown', (e) => {
+    if(imgViewerState.scale <= 1) return;
+    mouseDragging = true; mStartX = e.clientX - imgViewerState.x; mStartY = e.clientY - imgViewerState.y;
+  });
+  window.addEventListener('mousemove', (e) => {
+    if(!mouseDragging) return;
+    imgViewerState.x = e.clientX - mStartX; imgViewerState.y = e.clientY - mStartY;
+    applyImgViewerTransform();
+  });
+  window.addEventListener('mouseup', () => mouseDragging = false);
+  stage.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    imgViewerState.scale = Math.min(5, Math.max(1, imgViewerState.scale + (e.deltaY < 0 ? 0.2 : -0.2)));
+    if(imgViewerState.scale <= 1.02) resetImgViewerTransform(); else applyImgViewerTransform();
+  }, { passive:false });
+})();
 
 /* ---------------- ACCOUNTS ---------------- */
 $('accounts-btn').onclick = async () => {
