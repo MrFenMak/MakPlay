@@ -1,6 +1,6 @@
 # Mak Play
 
-A lightweight Google Play–style app store, built as a single HTML file with a Supabase backend.
+A Google Play–style app store, built as a single HTML file with a Supabase backend.
 
 ## Features
 - Username/password authentication (no email required)
@@ -19,3 +19,6 @@ There are two ways to use Mak Play, and the first option is recommended.
 https://mrfenmak.github.io/MakPlay/
 
 2. Download the HTML file and open it in your browser. This method is not recommended. It's better to use the website through the link above.
+
+## Note
+This is a personal project, not affiliated with Google or Google Play. I don't work for Google. (And my YouTube broken :( )
