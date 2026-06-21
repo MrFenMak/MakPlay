@@ -21,4 +21,4 @@ https://mrfenmak.github.io/MakPlay/
 2. Download the HTML file and open it in your browser. This method is not recommended. It's better to use the website through the link above.
 
 ## Note
-This is a personal project, not affiliated with Google or Google Play. I don't work for Google. (And my YouTube broken :( )
+This is a personal project, not affiliated with Google or Google Play. I don't work for Google. (And my YouTube broken)
