@@ -470,8 +470,16 @@ async function afterAuth(){
   state.username = profile.username;
   state.isAdmin = profile.username === ADMIN_USERNAME;
   sb.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', user.id);
-  sb.rpc('ping_online');
-  setInterval(() => sb.rpc('ping_online'), 60000);
+
+  async function pingOnline(){
+    const { error } = await sb.rpc('ping_online');
+    if(error){
+      // fallback если функция ещё не создана через update_v5.sql
+      await sb.from('profiles').update({ last_online: new Date().toISOString() }).eq('id', user.id);
+    }
+  }
+  pingOnline();
+  setInterval(pingOnline, 60000);
 
   hide($('auth-screen'));
   $('app').style.display = 'block';
@@ -1166,24 +1174,28 @@ $('img-viewer').addEventListener('click', (e) => { if(e.target.id === 'img-viewe
 })();
 
 /* ---------------- ACCOUNTS ---------------- */
-function toMoscowStr(iso){
+function fmtDate(iso){
   if(!iso) return '—';
   const d = new Date(iso);
-  return d.toLocaleString('ru-RU', { timeZone:'Europe/Moscow',
-    day:'2-digit', month:'2-digit', year:'numeric',
-    hour:'2-digit', minute:'2-digit' }) + ' (по мск)';
+  const date = d.toLocaleDateString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric' });
+  const time = d.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' });
+  return `${date} в ${time}`;
 }
 
 $('accounts-btn').onclick = async () => {
-  const { data: profiles } = await sb.from('profiles').select('*').order('last_online', { ascending:false });
+  const { data: profiles } = await sb.from('profiles').select('*').order('last_online', { ascending:false, nullsFirst:false });
   $('accounts-list').innerHTML = (profiles||[]).map(p => `
     <div class="acc-row">
-      <div class="acc-info">
-        <b>@${escapeHtml(p.username)}</b>
-        <span>Последний раз в сети: ${toMoscowStr(p.last_online)}</span>
-        <span>Последний вход в аккаунт: ${toMoscowStr(p.last_seen)}</span>
+      <div class="acc-info" style="flex:1;">
+        <b style="font-size:15px;">@${escapeHtml(p.username)}</b>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:2px 8px;margin-top:5px;">
+          <span style="font-size:11px;color:var(--accent);font-weight:600;">В сети</span>
+          <span style="font-size:12px;color:var(--muted);">${fmtDate(p.last_online)}</span>
+          <span style="font-size:11px;color:var(--muted);font-weight:600;">Вход</span>
+          <span style="font-size:12px;color:var(--muted);">${fmtDate(p.last_seen)}</span>
+        </div>
       </div>
-      ${p.username !== ADMIN_USERNAME ? `<button class="btn danger" data-del-acc="${p.id}">Удалить</button>` : ''}
+      ${p.username !== ADMIN_USERNAME ? `<button class="btn danger" style="margin-left:12px;flex-shrink:0;" data-del-acc="${p.id}">Удалить</button>` : ''}
     </div>`).join('');
   $('accounts-list').querySelectorAll('[data-del-acc]').forEach(btn => {
     btn.onclick = () => {
