@@ -43,7 +43,7 @@
   .error-msg{color:var(--danger);font-size:13px;margin-top:8px;min-height:16px;}
 
   #app{display:none;}
-  header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:var(--panel);position:sticky;top:0;z-index:20;border-bottom:1px solid var(--border);}
+  header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:12px 24px;background:var(--panel);position:sticky;top:0;z-index:20;border-bottom:1px solid var(--border);}
   .brand{display:flex;align-items:center;gap:12px;}
   .brand img{width:40px;height:40px;border-radius:12px;object-fit:cover;background:var(--panel2);}
   .logo-fallback{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;}
@@ -52,9 +52,9 @@
   .header-actions{display:flex;align-items:center;gap:10px;}
   .icon-btn{width:40px;height:40px;border-radius:50%;background:var(--panel2);border:none;color:var(--text);display:flex;align-items:center;justify-content:center;font-size:18px;}
   .icon-btn:hover{filter:brightness(1.15);}
-  .username-chip{font-size:13px;color:var(--muted);margin-right:4px;}
+  .username-chip{font-size:13px;color:var(--muted);margin-right:4px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
-  #sections-wrap{max-width:1100px;margin:0 auto;padding:24px 16px 80px;display:flex;flex-direction:column;gap:22px;}
+  #sections-wrap,#search-results{max-width:1100px;margin:0 auto;padding:24px 16px 80px;display:flex;flex-direction:column;gap:22px;}
   .section{background:var(--panel);border-radius:var(--radius);padding:14px 16px 18px;position:relative;}
   .section.dragging{opacity:.4;}
   .section-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
@@ -160,6 +160,38 @@
 
   .empty-hint{color:var(--muted);text-align:center;padding:60px 20px;font-size:15px;}
   .loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:200;color:var(--muted);}
+
+  /* ---------- SEARCH / HEADER LAYOUT ---------- */
+  .brand{order:1;}
+  .search-slot{order:2;flex:1 1 240px;min-width:0;max-width:440px;margin:0 auto;}
+  .header-actions{order:3;margin-left:auto;}
+  @media(max-width:860px){
+    header{padding:10px 14px;}
+    .search-slot{order:4;flex:1 1 100%;max-width:none;margin:0;}
+  }
+  .search-box{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--border);border-radius:24px;padding:0 6px 0 14px;height:42px;}
+  .search-box:focus-within{border-color:var(--accent);}
+  .search-ic{cursor:pointer;}
+  .search-box input{flex:1;min-width:0;background:transparent;border:none;outline:none;color:var(--text);font-size:15px;height:100%;}
+  .search-x{width:30px;height:30px;border-radius:50%;border:none;background:var(--border);color:var(--text);font-size:18px;line-height:1;flex-shrink:0;}
+  #search-sticky{position:sticky;top:0;z-index:25;background:var(--panel);border-bottom:1px solid var(--border);padding:10px 16px;}
+  .search-inner{max-width:700px;margin:0 auto;}
+  @media(min-width:900px){ #search-sticky{top:var(--header-h,72px);} }
+  @media(max-width:899px){ body.searching #main-header{position:static;} }
+  .search-chips{display:flex;gap:8px;margin:10px 0 6px;}
+  .chip{flex:1;padding:8px 6px;border-radius:18px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);font-weight:600;font-size:13px;}
+  .chip.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .suggest-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 6px;border:none;border-bottom:1px solid var(--border);background:none;color:var(--text);font-size:14px;}
+  .suggest-item:last-child{border-bottom:none;}
+  .suggest-ic{width:22px;text-align:center;color:var(--muted);}
+  .search-note{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--muted);}
+  .search-label{font-size:13px;color:var(--muted);font-weight:600;margin:6px 0 -6px;}
+  .apps-grid{display:flex;flex-wrap:wrap;gap:14px;}
+  .section-count{font-size:12px;color:var(--muted);}
+  .section-body.collapsed .scroll-arrow{display:none;}
+  .thumb{position:relative;width:54px;height:54px;}
+  .thumb img{width:100%;height:100%;border-radius:8px;object-fit:cover;}
+  .thumb-x{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:var(--danger);color:#fff;font-size:13px;line-height:1;padding:0;}
 </style>
 </head>
 <body>
@@ -188,13 +220,33 @@
 </div>
 
 <div id="app">
-  <header>
+  <header id="main-header">
     <div class="brand">
       <img id="logo-img" class="hidden" draggable="false" oncontextmenu="return false;" style="-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none;pointer-events:none;">
       <div id="logo-fallback" class="logo-fallback">M</div>
       <h2>Mak Play</h2>
       <button id="logo-edit-btn" class="logo-edit hidden">сменить</button>
+      <button id="logo-remove-btn" class="logo-edit hidden">убрать</button>
       <input type="file" id="logo-file-input" accept="image/*" class="hidden">
+    </div>
+    <div class="search-slot" id="search-slot">
+      <div id="search-ui">
+        <div class="search-inner">
+          <div class="search-box">
+            <span class="search-ic">🔍</span>
+            <input id="search-input" type="text" placeholder="Поиск" autocomplete="off" enterkeyhint="search">
+            <button id="search-close" class="search-x hidden" title="Закрыть поиск">×</button>
+          </div>
+          <div id="search-dropdown" class="hidden">
+            <div class="search-chips">
+              <button class="chip active" data-mode="name">Название</button>
+              <button class="chip" data-mode="tag">Тег</button>
+              <button class="chip" data-mode="section">Раздел</button>
+            </div>
+            <div id="search-suggest"></div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="header-actions">
       <span class="username-chip" id="username-chip"></span>
@@ -203,6 +255,8 @@
       <button class="icon-btn" id="logout-btn" title="Выйти">⎋</button>
     </div>
   </header>
+  <div id="search-sticky" class="hidden"></div>
+  <div id="search-results" class="hidden"></div>
   <div id="sections-wrap"></div>
   <button class="add-fab hidden" id="add-fab">+</button>
 </div>
@@ -220,7 +274,8 @@
       <h3 id="app-form-title">Новое приложение</h3>
       <div class="field"><label>Название</label><input id="app-name" class="text-input"></div>
       <div class="field"><label>Автор (необязательно)</label><input id="app-author" class="text-input" placeholder="Например: твой ник"></div>
-      <div class="field"><label>Раздел</label><select id="app-section" class="text-input"></select></div>
+      <div class="field"><label>Разделы (можно выбрать несколько — это одна и та же игра)</label>
+        <div id="app-sections-checklist" style="max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:8px;"></div></div>
       <div class="field"><label>Иконка (картинка)</label>
         <div class="filepick"><input type="file" id="app-icon-file" accept="image/*"></div>
         <div class="thumb-row" id="app-icon-preview"></div>
@@ -401,7 +456,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_28o8HVrzdwdJVBzCF17LcQ_i78jG8QJ";
 const ADMIN_USERNAME = "M_fen";
 const FAKE_EMAIL_DOMAIN = "makplay.local";
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = SUPABASE_URL.includes('YOUR_SUPABASE') ? null : supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const $ = (id) => document.getElementById(id);
 function show(el){ el.classList.remove('hidden'); }
 function hide(el){ el.classList.add('hidden'); }
@@ -409,11 +464,13 @@ function escapeHtml(s){ const d=document.createElement('div'); d.textContent = s
 
 let state = {
   user:null, username:null, isAdmin:false,
-  sections:[], apps:[], logoUrl:"",
+  sections:[], apps:[], appSections:[], logoUrl:"", needMigration:false,
   editingAppId:null, editingSectionId:null,
   currentAppTags:[], appType:'file',
-  currentDetailApp:null, currentReviews:[], myReview:null,
-  reviewStarValue:0,
+  existingExtra:[], existingIcon:null, removedUrls:[],
+  currentDetailApp:null, currentReviews:[], myReview:null, reviewStarValue:0,
+  collapsed:new Set(JSON.parse(localStorage.getItem('makplay_collapsed') || '[]')),
+  search:{ active:false, mode:'name', query:'', openSections:new Set() },
 };
 
 /* ---------------- THEME ---------------- */
@@ -473,41 +530,52 @@ async function afterAuth(){
 
   async function pingOnline(){
     const { error } = await sb.rpc('ping_online');
-    if(error){
-      // fallback если функция ещё не создана через update_v5.sql
-      await sb.from('profiles').update({ last_online: new Date().toISOString() }).eq('id', user.id);
-    }
+    if(error){ await sb.from('profiles').update({ last_online: new Date().toISOString() }).eq('id', user.id); }
   }
   pingOnline();
-  setInterval(pingOnline, 60000);
+  if(!window._pingTimer) window._pingTimer = setInterval(pingOnline, 60000);
 
   hide($('auth-screen'));
   $('app').style.display = 'block';
   $('username-chip').textContent = '@' + state.username;
-  if(state.isAdmin){ show($('add-fab')); show($('accounts-btn')); show($('logo-edit-btn')); }
-  await loadAll();
+  if(state.isAdmin){ show($('add-fab')); show($('accounts-btn')); show($('logo-edit-btn')); show($('logo-remove-btn')); }
+  await loadAll(true);
   setupRealtime();
 }
 
 /* ---------------- DATA ---------------- */
-async function loadAll(){
-  const [{ data: sections }, { data: apps }, { data: settings }] = await Promise.all([
+let lastSig = '';
+async function loadAll(force){
+  const [s, a, as, st] = await Promise.all([
     sb.from('sections').select('*').order('position'),
     sb.from('apps').select('*').order('position'),
+    sb.from('app_sections').select('*'),
     sb.from('app_settings').select('*').eq('key','logo_url').maybeSingle(),
   ]);
-  state.sections = sections || [];
-  state.apps = apps || [];
-  state.logoUrl = settings?.value || '';
+  state.sections = s.data || [];
+  state.apps = a.data || [];
+  state.appSections = as.data || [];
+  state.needMigration = !!as.error;
+  state.logoUrl = st.data?.value || '';
+  const sig = JSON.stringify([
+    state.sections,
+    state.apps.map(x => ({ ...x, views_count:0, downloads_count:0 })),
+    state.appSections, state.logoUrl, state.needMigration
+  ]);
+  if(!force && sig === lastSig) return;
+  lastSig = sig;
   renderLogo();
-  renderSections();
+  renderAll();
 }
+let loadTimer = null;
+function scheduleLoad(){ clearTimeout(loadTimer); loadTimer = setTimeout(() => loadAll(), 200); }
 
 function setupRealtime(){
   sb.channel('mak-play-sync')
-    .on('postgres_changes', { event:'*', schema:'public', table:'sections' }, loadAll)
-    .on('postgres_changes', { event:'*', schema:'public', table:'apps' }, loadAll)
-    .on('postgres_changes', { event:'*', schema:'public', table:'app_settings' }, loadAll)
+    .on('postgres_changes', { event:'*', schema:'public', table:'sections' }, scheduleLoad)
+    .on('postgres_changes', { event:'*', schema:'public', table:'apps' }, scheduleLoad)
+    .on('postgres_changes', { event:'*', schema:'public', table:'app_sections' }, scheduleLoad)
+    .on('postgres_changes', { event:'*', schema:'public', table:'app_settings' }, scheduleLoad)
     .subscribe();
 }
 
@@ -516,104 +584,158 @@ function renderLogo(){
   else { hide($('logo-img')); show($('logo-fallback')); }
 }
 
+function appsInSection(secId){
+  return state.appSections.filter(r => r.section_id === secId)
+    .sort((a,b) => a.position - b.position)
+    .map(r => state.apps.find(x => x.id === r.app_id)).filter(Boolean);
+}
+function sectionIdsOfApp(appId){ return state.appSections.filter(r => r.app_id === appId).map(r => r.section_id); }
+function orphanApps(){
+  const inSec = new Set(state.appSections.map(r => r.app_id));
+  return state.apps.filter(a => !inSec.has(a.id));
+}
+
+function renderAll(){
+  renderSections();
+  if(state.search.active) renderSearch();
+}
+
 /* ---------------- RENDER SECTIONS ---------------- */
+function buildAppsBody(apps, opts){
+  const body = document.createElement('div');
+  body.className = 'section-body';
+  const row = document.createElement('div');
+  row.className = 'apps-row';
+  if(opts.secId) row.dataset.sectionId = opts.secId;
+  if(!apps.length){
+    row.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:10px;">Нет приложений</div>';
+  } else {
+    apps.forEach(app => row.appendChild(renderAppCard(app, { drag: !!opts.drag })));
+  }
+  body.appendChild(row);
+
+  const leftArrow = document.createElement('button');
+  leftArrow.className = 'scroll-arrow left hidden'; leftArrow.textContent = '‹';
+  const rightArrow = document.createElement('button');
+  rightArrow.className = 'scroll-arrow right hidden'; rightArrow.textContent = '›';
+  body.appendChild(leftArrow); body.appendChild(rightArrow);
+
+  function updateArrows(){
+    const canScroll = row.scrollWidth > row.clientWidth + 4;
+    rightArrow.classList.toggle('hidden', !canScroll || row.scrollLeft + row.clientWidth >= row.scrollWidth - 4);
+    leftArrow.classList.toggle('hidden', row.scrollLeft <= 4 || !canScroll);
+  }
+  row.addEventListener('scroll', updateArrows);
+  leftArrow.onclick = () => row.scrollBy({ left:-260, behavior:'smooth' });
+  rightArrow.onclick = () => row.scrollBy({ left:260, behavior:'smooth' });
+  setTimeout(updateArrows, 50);
+  body._updateArrows = updateArrows;
+  return body;
+}
+
+function buildSection(sec, opts = {}){
+  const inSearch = !!opts.search;
+  const apps = opts.apps || appsInSection(sec.id);
+  const isCollapsed = inSearch ? !state.search.openSections.has(sec.id) : state.collapsed.has(sec.id);
+  const canDrag = state.isAdmin && !inSearch && !opts.orphan;
+
+  const div = document.createElement('div');
+  div.className = 'section' + (opts.orphan ? ' orphan' : '');
+  div.dataset.id = sec.id;
+  if(canDrag) div.draggable = true;
+
+  const head = document.createElement('div');
+  head.className = 'section-head';
+  head.innerHTML = `
+    ${canDrag ? '<span class="section-handle">⠿</span>' : ''}
+    <span class="section-title">${escapeHtml(sec.title)}</span>
+    ${inSearch ? `<span class="section-count">${apps.length}</span>` : ''}
+    ${canDrag ? `<button class="section-edit-btn">изменить</button>` : ''}
+    <button class="collapse-btn ${isCollapsed ? 'collapsed' : ''}">⌄</button>`;
+  div.appendChild(head);
+
+  const body = buildAppsBody(apps, { secId: opts.orphan ? null : sec.id, drag: canDrag });
+  if(isCollapsed) body.classList.add('collapsed');
+  div.appendChild(body);
+
+  head.querySelector('.collapse-btn').onclick = (e) => {
+    const nowCollapsed = !body.classList.contains('collapsed');
+    body.classList.toggle('collapsed', nowCollapsed);
+    e.currentTarget.classList.toggle('collapsed', nowCollapsed);
+    if(inSearch){
+      if(nowCollapsed) state.search.openSections.delete(sec.id); else state.search.openSections.add(sec.id);
+    } else {
+      if(nowCollapsed) state.collapsed.add(sec.id); else state.collapsed.delete(sec.id);
+      localStorage.setItem('makplay_collapsed', JSON.stringify([...state.collapsed]));
+    }
+    if(!nowCollapsed) setTimeout(() => body._updateArrows && body._updateArrows(), 30);
+  };
+  head.querySelector('.section-edit-btn')?.addEventListener('click', () => openSectionModal(sec.id));
+
+  if(canDrag){
+    div.addEventListener('dragstart', (e) => {
+      if(e.target !== div) return;
+      div.classList.add('dragging');
+      try{ e.dataTransfer.setData('text/plain', 'section'); }catch(_){}
+    });
+  }
+  return div;
+}
+
 function renderSections(){
   const wrap = $('sections-wrap');
   wrap.innerHTML = '';
-  if(state.sections.length === 0){
+  if(state.needMigration){
+    wrap.innerHTML = '<div class="empty-hint">Нужно один раз выполнить update_v6.sql в Supabase (SQL Editor → New query → Run), потом обновить страницу.</div>';
+    return;
+  }
+  const orph = state.isAdmin ? orphanApps() : [];
+  if(!state.sections.length && !orph.length){
     wrap.innerHTML = '<div class="empty-hint">Пока нет разделов с приложениями</div>';
     return;
   }
-  state.sections.forEach(sec => {
-    const secApps = state.apps.filter(a => a.section_id === sec.id).sort((a,b)=>a.position-b.position);
-    const div = document.createElement('div');
-    div.className = 'section';
-    div.dataset.id = sec.id;
-    if(state.isAdmin) div.draggable = true;
-
-    const head = document.createElement('div');
-    head.className = 'section-head';
-    head.innerHTML = `
-      ${state.isAdmin ? '<span class="section-handle">⠿</span>' : ''}
-      <span class="section-title">${escapeHtml(sec.title)}</span>
-      ${state.isAdmin ? `<button class="section-edit-btn" data-edit-section="${sec.id}">изменить</button>` : ''}
-      <button class="collapse-btn">⌄</button>`;
-    div.appendChild(head);
-
-    const body = document.createElement('div');
-    body.className = 'section-body';
-    const row = document.createElement('div');
-    row.className = 'apps-row';
-    if(secApps.length === 0){
-      row.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:10px;">Нет приложений</div>';
-    } else {
-      secApps.forEach(app => row.appendChild(renderAppCard(app)));
-    }
-    body.appendChild(row);
-
-    const leftArrow = document.createElement('button');
-    leftArrow.className = 'scroll-arrow left hidden'; leftArrow.textContent='‹';
-    const rightArrow = document.createElement('button');
-    rightArrow.className = 'scroll-arrow right hidden'; rightArrow.textContent='›';
-    body.appendChild(leftArrow); body.appendChild(rightArrow);
-
-    function updateArrows(){
-      const canScroll = row.scrollWidth > row.clientWidth + 4;
-      rightArrow.classList.toggle('hidden', !canScroll || row.scrollLeft + row.clientWidth >= row.scrollWidth - 4);
-      leftArrow.classList.toggle('hidden', row.scrollLeft <= 4 || !canScroll);
-    }
-    row.addEventListener('scroll', updateArrows);
-    leftArrow.onclick = () => row.scrollBy({left:-260, behavior:'smooth'});
-    rightArrow.onclick = () => row.scrollBy({left:260, behavior:'smooth'});
-    setTimeout(updateArrows, 50);
-
-    head.querySelector('.collapse-btn').onclick = () => {
-      head.querySelector('.collapse-btn').classList.toggle('collapsed');
-      body.classList.toggle('collapsed');
-    };
-    if(state.isAdmin){
-      head.querySelector('[data-edit-section]')?.addEventListener('click', () => openSectionModal(sec.id));
-    }
-    div.appendChild(body);
-    wrap.appendChild(div);
-    if(state.isAdmin){
-      div.addEventListener('dragstart', () => div.classList.add('dragging'));
-      div.addEventListener('dragend', () => div.classList.remove('dragging'));
-    }
-  });
-  if(state.isAdmin) enableSectionDrag(wrap);
+  state.sections.forEach(sec => wrap.appendChild(buildSection(sec)));
+  if(orph.length){
+    wrap.appendChild(buildSection({ id:'__orphan', title:'Без раздела (видишь только ты)' }, { apps: orph, orphan:true }));
+  }
 }
 
-function renderAppCard(app){
+function renderAppCard(app, opts = {}){
   const card = document.createElement('div');
   card.className = 'app-card';
   card.dataset.id = app.id;
-  if(state.isAdmin) card.draggable = true;
+  const canDrag = state.isAdmin && opts.drag;
+  if(canDrag) card.draggable = true;
   const isLink = app.link_type === 'link';
   card.innerHTML = `
-    ${state.isAdmin ? '<span class="app-handle">⠿</span>' : ''}
+    ${canDrag ? '<span class="app-handle">⠿</span>' : ''}
     <img class="app-icon" src="${app.icon_url || ''}" onerror="this.style.background='var(--border)'">
     <div class="app-name">${escapeHtml(app.name)}</div>
     <div class="app-card-actions">
-      <button class="dl-btn ${isLink?'is-link':''}" data-dl="${app.id}">${isLink ? 'Перейти' : 'Скачать'}</button>
+      <button class="dl-btn ${isLink ? 'is-link' : ''}" data-dl="1">${isLink ? 'Перейти' : 'Скачать'}</button>
     </div>
     ${state.isAdmin ? `<div class="app-card-actions">
-      <button class="admin-mini-btn" data-edit-app="${app.id}">✎</button>
-      <button class="admin-mini-btn" data-del-app="${app.id}">🗑</button>
+      <button class="admin-mini-btn" data-edit-app="1">✎</button>
+      <button class="admin-mini-btn" data-del-app="1">🗑</button>
     </div>` : ''}`;
   card.addEventListener('click', (e) => { if(e.target.closest('button')) return; openDetailModal(app.id); });
   card.querySelector('[data-dl]').onclick = (e) => { e.stopPropagation(); triggerAppAction(app); };
   if(state.isAdmin){
     card.querySelector('[data-edit-app]').onclick = (e) => { e.stopPropagation(); openAppModal(app.id); };
     card.querySelector('[data-del-app]').onclick = (e) => { e.stopPropagation(); confirmDeleteApp(app.id); };
-    card.addEventListener('dragstart', () => card.classList.add('dragging'));
-    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+  }
+  if(canDrag){
+    card.addEventListener('dragstart', (e) => {
+      e.stopPropagation();
+      card.classList.add('dragging');
+      try{ e.dataTransfer.setData('text/plain', 'app'); }catch(_){}
+    });
   }
   return card;
 }
 
 async function triggerAppAction(app){
-  sb.rpc('increment_downloads', { p_app_id: app.id }).then(()=>loadAll());
+  sb.rpc('increment_downloads', { p_app_id: app.id }).then(() => loadAll());
   if(app.link_type === 'link'){
     if(!app.link_url){ alert('У приложения пока нет ссылки'); return; }
     window.open(app.link_url, '_blank');
@@ -630,47 +752,58 @@ async function triggerAppAction(app){
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
     } catch(err){
-      // запасной вариант, если не получилось скачать через blob
       const a = document.createElement('a');
-      a.href = app.file_url; a.download = app.file_name || app.name; a.target='_blank';
+      a.href = app.file_url; a.download = app.file_name || app.name; a.target = '_blank';
       document.body.appendChild(a); a.click(); a.remove();
     }
   }
 }
 
-/* ---------------- DRAG & DROP ---------------- */
-function enableSectionDrag(wrap){
+/* ---------------- DRAG & DROP (admin) — навешивается один раз ---------------- */
+(function initDrag(){
+  const wrap = $('sections-wrap');
   wrap.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    const dragging = wrap.querySelector('.section.dragging');
-    if(!dragging) return;
-    const siblings = [...wrap.querySelectorAll('.section:not(.dragging)')];
-    const next = siblings.find(s => e.clientY < s.getBoundingClientRect().top + s.getBoundingClientRect().height/2);
-    wrap.insertBefore(dragging, next || null);
-  });
-  wrap.addEventListener('drop', async () => {
-    const ids = [...wrap.querySelectorAll('.section')].map(s => s.dataset.id);
-    await Promise.all(ids.map((id, idx) => sb.from('sections').update({ position: idx }).eq('id', id)));
-  });
-  wrap.querySelectorAll('.apps-row').forEach(row => {
-    row.addEventListener('dragover', (e) => {
+    const dragCard = wrap.querySelector('.app-card.dragging');
+    const dragSec = wrap.querySelector('.section.dragging');
+    if(dragCard){
+      const row = dragCard.parentElement;
+      if(!e.target.closest || e.target.closest('.apps-row') !== row) return;
       e.preventDefault();
-      const dragging = row.querySelector('.app-card.dragging');
-      if(!dragging) return;
-      const siblings = [...row.querySelectorAll('.app-card:not(.dragging)')];
-      const next = siblings.find(c => e.clientX < c.getBoundingClientRect().left + c.getBoundingClientRect().width/2);
-      row.insertBefore(dragging, next || null);
-    });
-    row.addEventListener('drop', async () => {
-      const ids = [...row.querySelectorAll('.app-card')].map(c => c.dataset.id);
-      await Promise.all(ids.map((id, idx) => sb.from('apps').update({ position: idx }).eq('id', id)));
-    });
+      const sibs = [...row.querySelectorAll('.app-card:not(.dragging)')];
+      const next = sibs.find(c => e.clientX < c.getBoundingClientRect().left + c.getBoundingClientRect().width / 2);
+      row.insertBefore(dragCard, next || null);
+    } else if(dragSec){
+      e.preventDefault();
+      const sibs = [...wrap.querySelectorAll('.section:not(.orphan):not(.dragging)')];
+      const next = sibs.find(s => e.clientY < s.getBoundingClientRect().top + s.getBoundingClientRect().height / 2);
+      wrap.insertBefore(dragSec, next || wrap.querySelector('.section.orphan') || null);
+    }
   });
-}
+  wrap.addEventListener('drop', async (e) => {
+    const dragCard = wrap.querySelector('.app-card.dragging');
+    const dragSec = wrap.querySelector('.section.dragging');
+    if(dragCard){
+      e.preventDefault();
+      const row = dragCard.parentElement;
+      const secId = row.dataset.sectionId;
+      if(!secId) return;
+      const ids = [...row.querySelectorAll('.app-card')].map(c => c.dataset.id);
+      await Promise.all(ids.map((id, i) =>
+        sb.from('app_sections').update({ position:i }).eq('app_id', id).eq('section_id', secId)));
+    } else if(dragSec){
+      e.preventDefault();
+      const ids = [...wrap.querySelectorAll('.section:not(.orphan)')].map(s => s.dataset.id);
+      await Promise.all(ids.map((id, i) => sb.from('sections').update({ position:i }).eq('id', id)));
+    }
+  });
+  wrap.addEventListener('dragend', () => {
+    wrap.querySelectorAll('.dragging').forEach(x => x.classList.remove('dragging'));
+  });
+})();
 
 /* ---------------- MODAL GENERIC ---------------- */
 document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeAllModals));
-document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', (e) => { if(e.target===o) closeAllModals(); }));
+document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', (e) => { if(e.target === o) closeAllModals(); }));
 function closeAllModals(){ document.querySelectorAll('.modal-overlay').forEach(hide); }
 
 function switchModalTab(which){
@@ -682,20 +815,22 @@ $('tab-section').onclick = () => { switchModalTab('section'); openSectionModal(n
 $('add-fab').onclick = () => openAppModal(null);
 
 /* ---------------- APP MODAL ---------------- */
-let pendingIconFile=null, pendingExtraFiles=[], pendingPackageFile=null;
+let pendingIconFile = null, pendingExtraFiles = [], pendingPackageFile = null;
 
-function populateSectionSelect(){
-  const sel = $('app-section');
-  sel.innerHTML = '<option value="">Без раздела</option>' +
-    state.sections.map(s => `<option value="${s.id}">${escapeHtml(s.title)}</option>`).join('');
+function renderSectionChecklistForApp(selectedIds){
+  const box = $('app-sections-checklist');
+  box.innerHTML = state.sections.map(s => `
+    <label style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;">
+      <input type="checkbox" value="${s.id}" ${selectedIds.includes(s.id) ? 'checked' : ''}> ${escapeHtml(s.title)}
+    </label>`).join('') || '<div style="color:var(--muted);font-size:13px;">Сначала создай раздел (вкладка «Раздел»)</div>';
 }
 
 function setAppType(t){
   state.appType = t;
-  $('type-file-btn').classList.toggle('active', t==='file');
-  $('type-link-btn').classList.toggle('active', t==='link');
-  $('file-block').classList.toggle('hidden', t!=='file');
-  $('link-block').classList.toggle('hidden', t!=='link');
+  $('type-file-btn').classList.toggle('active', t === 'file');
+  $('type-link-btn').classList.toggle('active', t === 'link');
+  $('file-block').classList.toggle('hidden', t !== 'file');
+  $('link-block').classList.toggle('hidden', t !== 'link');
 }
 $('type-file-btn').onclick = () => setAppType('file');
 $('type-link-btn').onclick = () => setAppType('link');
@@ -707,8 +842,8 @@ function renderTagChips(){
   state.currentAppTags.forEach((tag, i) => {
     const chip = document.createElement('span');
     chip.className = 'tag-chip-edit';
-    chip.innerHTML = `${escapeHtml(tag)} <button type="button" data-i="${i}">×</button>`;
-    chip.querySelector('button').onclick = () => { state.currentAppTags.splice(i,1); renderTagChips(); };
+    chip.innerHTML = `${escapeHtml(tag)} <button type="button">×</button>`;
+    chip.querySelector('button').onclick = () => { state.currentAppTags.splice(i, 1); renderTagChips(); };
     wrap.insertBefore(chip, input);
   });
 }
@@ -721,49 +856,83 @@ $('app-tags-input').addEventListener('keydown', (e) => {
   }
 });
 
+function thumbEl(src, onRemove){
+  const w = document.createElement('div');
+  w.className = 'thumb';
+  const img = document.createElement('img'); img.src = src;
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'thumb-x'; b.textContent = '×'; b.title = 'Удалить картинку';
+  b.onclick = onRemove;
+  w.appendChild(img); w.appendChild(b);
+  return w;
+}
+function renderIconPreview(){
+  const box = $('app-icon-preview'); box.innerHTML = '';
+  let src = null;
+  if(pendingIconFile) src = URL.createObjectURL(pendingIconFile);
+  else if(state.existingIcon) src = state.existingIcon;
+  if(!src) return;
+  box.appendChild(thumbEl(src, () => {
+    if(pendingIconFile){ pendingIconFile = null; $('app-icon-file').value = ''; }
+    else { state.removedUrls.push(state.existingIcon); state.existingIcon = null; }
+    renderIconPreview();
+  }));
+}
+function renderExtraPreview(){
+  const box = $('app-extra-preview'); box.innerHTML = '';
+  state.existingExtra.forEach((u, i) => box.appendChild(thumbEl(u, () => {
+    state.removedUrls.push(u); state.existingExtra.splice(i, 1); renderExtraPreview();
+  })));
+  pendingExtraFiles.forEach((f, i) => box.appendChild(thumbEl(URL.createObjectURL(f), () => {
+    pendingExtraFiles.splice(i, 1); renderExtraPreview();
+  })));
+}
+
 function openAppModal(appId){
   switchModalTab('app');
   state.editingAppId = appId;
   state.editingSectionId = null;
-  pendingIconFile=null; pendingExtraFiles=[]; pendingPackageFile=null;
-  populateSectionSelect();
-  $('app-form-error').textContent='';
-  $('app-icon-preview').innerHTML=''; $('app-extra-preview').innerHTML=''; $('app-file-current').textContent='';
-  $('app-tags-input').value='';
-  $('app-update-note').value=''; $('app-note-title').value=''; $('app-note-text').value='';
+  pendingIconFile = null; pendingExtraFiles = []; pendingPackageFile = null;
+  state.removedUrls = []; state.existingExtra = []; state.existingIcon = null;
+  $('app-icon-file').value = ''; $('app-extra-files').value = ''; $('app-package-file').value = '';
+  $('app-form-error').textContent = '';
+  $('app-file-current').textContent = '';
+  $('app-tags-input').value = '';
+  $('app-update-note').value = ''; $('app-note-title').value = ''; $('app-note-text').value = '';
   if(appId){
     const app = state.apps.find(a => a.id === appId);
-    state.currentAppTags = [...(app.tags||[])];
+    state.currentAppTags = [...(app.tags || [])];
+    state.existingExtra = [...(app.extra_images || [])];
+    state.existingIcon = app.icon_url || null;
     $('app-form-title').textContent = 'Изменить приложение';
     $('app-name').value = app.name;
     $('app-author').value = app.author || '';
-    $('app-section').value = app.section_id || '';
     $('app-desc').value = app.description || '';
     $('app-update-note').value = app.update_note || '';
     $('app-note-title').value = app.note_title || '';
     $('app-note-text').value = app.note_text || '';
     setAppType(app.link_type || 'file');
     $('app-link-url').value = app.link_url || '';
-    if(app.icon_url) $('app-icon-preview').innerHTML = `<img src="${app.icon_url}">`;
-    if(app.extra_images?.length) $('app-extra-preview').innerHTML = app.extra_images.map(u=>`<img src="${u}">`).join('');
     if(app.file_name) $('app-file-current').textContent = 'Текущий файл: ' + app.file_name;
+    renderSectionChecklistForApp(sectionIdsOfApp(appId));
   } else {
     state.currentAppTags = [];
     $('app-form-title').textContent = 'Новое приложение';
-    $('app-name').value=''; $('app-author').value=''; $('app-section').value=''; $('app-desc').value=''; $('app-link-url').value='';
+    $('app-name').value = ''; $('app-author').value = ''; $('app-desc').value = ''; $('app-link-url').value = '';
     setAppType('file');
+    renderSectionChecklistForApp([]);
   }
   renderTagChips();
+  renderIconPreview();
+  renderExtraPreview();
   show($('add-modal-overlay'));
 }
 
-$('app-icon-file').onchange = (e) => {
-  pendingIconFile = e.target.files[0];
-  if(pendingIconFile) $('app-icon-preview').innerHTML = `<img src="${URL.createObjectURL(pendingIconFile)}">`;
-};
+$('app-icon-file').onchange = (e) => { pendingIconFile = e.target.files[0] || null; renderIconPreview(); };
 $('app-extra-files').onchange = (e) => {
-  pendingExtraFiles = [...e.target.files];
-  $('app-extra-preview').innerHTML = pendingExtraFiles.map(f=>`<img src="${URL.createObjectURL(f)}">`).join('');
+  pendingExtraFiles.push(...e.target.files);
+  e.target.value = '';
+  renderExtraPreview();
 };
 $('app-package-file').onchange = (e) => {
   pendingPackageFile = e.target.files[0];
@@ -771,26 +940,39 @@ $('app-package-file').onchange = (e) => {
 };
 
 async function uploadToBucket(bucket, file){
-  const extMatch = file.name.match(/\.[a-zA-Z0-9]+$/);
-  const ext = extMatch ? extMatch[0] : '';
-  const path = `${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`;
+  const path = `${Date.now()}_${Math.random().toString(36).slice(2)}_${file.name}`;
   const { error } = await sb.storage.from(bucket).upload(path, file);
   if(error) throw error;
   const { data } = sb.storage.from(bucket).getPublicUrl(path);
   return data.publicUrl;
 }
 
+async function removeFromStorage(urls){
+  const byBucket = {};
+  (urls || []).filter(Boolean).forEach(u => {
+    const m = u.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
+    if(m) (byBucket[m[1]] = byBucket[m[1]] || []).push(decodeURIComponent(m[2]));
+  });
+  for(const b in byBucket){
+    try{ await sb.storage.from(b).remove(byBucket[b]); }catch(_){}
+  }
+}
+
+function nextPositionInSection(secId){
+  const rows = state.appSections.filter(r => r.section_id === secId);
+  return rows.length ? Math.max(...rows.map(r => r.position)) + 1 : 0;
+}
+
 $('save-app-btn').onclick = async () => {
   const name = $('app-name').value.trim();
-  $('app-form-error').textContent='';
-  if(!name){ $('app-form-error').textContent='Введите название'; return; }
-  if(state.appType === 'link' && !$('app-link-url').value.trim()){ $('app-form-error').textContent='Введите ссылку'; return; }
-  $('save-app-btn').textContent='Сохранение…'; $('save-app-btn').disabled=true;
+  $('app-form-error').textContent = '';
+  if(!name){ $('app-form-error').textContent = 'Введите название'; return; }
+  if(state.appType === 'link' && !$('app-link-url').value.trim()){ $('app-form-error').textContent = 'Введите ссылку'; return; }
+  $('save-app-btn').textContent = 'Сохранение…'; $('save-app-btn').disabled = true;
   try{
     const payload = {
       name,
       author: $('app-author').value.trim(),
-      section_id: $('app-section').value || null,
       description: $('app-desc').value.trim(),
       tags: [...state.currentAppTags],
       link_type: state.appType,
@@ -801,35 +983,58 @@ $('save-app-btn').onclick = async () => {
       note_updated_at: new Date().toISOString(),
     };
     if(pendingIconFile) payload.icon_url = await uploadToBucket('app-assets', pendingIconFile);
-    if(pendingExtraFiles.length){
-      const urls = await Promise.all(pendingExtraFiles.map(f => uploadToBucket('app-assets', f)));
-      const existing = state.editingAppId ? (state.apps.find(a=>a.id===state.editingAppId)?.extra_images||[]) : [];
-      payload.extra_images = [...existing, ...urls];
-    }
+    else if(state.editingAppId && !state.existingIcon) payload.icon_url = null;
+
+    const newUrls = await Promise.all(pendingExtraFiles.map(f => uploadToBucket('app-assets', f)));
+    payload.extra_images = [...state.existingExtra, ...newUrls];
+
     if(state.appType === 'file' && pendingPackageFile){
       payload.file_url = await uploadToBucket('app-files', pendingPackageFile);
       payload.file_name = pendingPackageFile.name;
     }
-    if(state.editingAppId){
-      const { error } = await sb.from('apps').update(payload).eq('id', state.editingAppId);
+
+    let appId = state.editingAppId;
+    if(appId){
+      const { error } = await sb.from('apps').update(payload).eq('id', appId);
       if(error) throw error;
     } else {
       payload.position = state.apps.length;
-      const { error } = await sb.from('apps').insert(payload);
+      const { data, error } = await sb.from('apps').insert(payload).select().single();
+      if(error) throw error;
+      appId = data.id;
+    }
+
+    // разделы (одна и та же игра может быть в нескольких)
+    const wanted = [...document.querySelectorAll('#app-sections-checklist input:checked')].map(i => i.value);
+    const current = sectionIdsOfApp(appId);
+    const toAdd = wanted.filter(id => !current.includes(id));
+    const toDel = current.filter(id => !wanted.includes(id));
+    if(toAdd.length){
+      const { error } = await sb.from('app_sections').insert(
+        toAdd.map(sid => ({ app_id: appId, section_id: sid, position: nextPositionInSection(sid) })));
       if(error) throw error;
     }
+    if(toDel.length){
+      const { error } = await sb.from('app_sections').delete().eq('app_id', appId).in('section_id', toDel);
+      if(error) throw error;
+    }
+
+    await removeFromStorage(state.removedUrls);
     closeAllModals();
     await loadAll();
   } catch(err){
     $('app-form-error').textContent = err.message || 'Ошибка сохранения';
   } finally {
-    $('save-app-btn').textContent='Сохранить'; $('save-app-btn').disabled=false;
+    $('save-app-btn').textContent = 'Сохранить'; $('save-app-btn').disabled = false;
   }
 };
 
 function confirmDeleteApp(id){
-  openConfirm('Удалить это приложение?', async () => {
-    await sb.from('apps').delete().eq('id', id);
+  openConfirm('Удалить приложение полностью (из всех разделов, вместе с отзывами)?', async () => {
+    const app = state.apps.find(a => a.id === id);
+    const { error } = await sb.from('apps').delete().eq('id', id);
+    if(error){ alert('Ошибка удаления: ' + error.message); return; }
+    if(app) await removeFromStorage([app.icon_url, app.file_url, ...(app.extra_images || [])]);
     await loadAll();
   });
 }
@@ -839,15 +1044,15 @@ function openSectionModal(sectionId){
   switchModalTab('section');
   state.editingSectionId = sectionId;
   state.editingAppId = null;
-  $('section-form-error').textContent='';
-  const checklist = $('section-apps-checklist');
-  checklist.innerHTML = state.apps.map(a => `
+  $('section-form-error').textContent = '';
+  const memberIds = sectionId ? state.appSections.filter(r => r.section_id === sectionId).map(r => r.app_id) : [];
+  $('section-apps-checklist').innerHTML = state.apps.map(a => `
     <label style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;">
-      <input type="checkbox" value="${a.id}" ${a.section_id===sectionId ? 'checked':''}> ${escapeHtml(a.name)}
+      <input type="checkbox" value="${a.id}" ${memberIds.includes(a.id) ? 'checked' : ''}> ${escapeHtml(a.name)}
     </label>`).join('') || '<div style="color:var(--muted);font-size:13px;">Пока нет приложений</div>';
 
   if(sectionId){
-    const sec = state.sections.find(s=>s.id===sectionId);
+    const sec = state.sections.find(s => s.id === sectionId);
     $('section-form-title').textContent = 'Изменить раздел';
     $('section-title').value = sec.title;
     show($('delete-section-btn'));
@@ -862,7 +1067,7 @@ function openSectionModal(sectionId){
 $('delete-section-btn').onclick = () => {
   const id = state.editingSectionId;
   if(!id) return;
-  openConfirm('Удалить этот раздел? Приложения внутри не удалятся, просто останутся без раздела.', async () => {
+  openConfirm('Удалить этот раздел? Приложения внутри не удалятся.', async () => {
     const { error } = await sb.from('sections').delete().eq('id', id);
     if(error){ alert('Ошибка удаления: ' + error.message); return; }
     closeAllModals();
@@ -872,8 +1077,8 @@ $('delete-section-btn').onclick = () => {
 
 $('save-section-btn').onclick = async () => {
   const title = $('section-title').value.trim();
-  $('section-form-error').textContent='';
-  if(!title){ $('section-form-error').textContent='Введите название раздела'; return; }
+  $('section-form-error').textContent = '';
+  if(!title){ $('section-form-error').textContent = 'Введите название раздела'; return; }
   $('save-section-btn').disabled = true;
   try{
     let secId = state.editingSectionId;
@@ -885,12 +1090,20 @@ $('save-section-btn').onclick = async () => {
       if(error) throw error;
       secId = data.id;
     }
-    const checked = [...document.querySelectorAll('#section-apps-checklist input:checked')].map(i=>i.value);
-    const unchecked = [...document.querySelectorAll('#section-apps-checklist input:not(:checked)')].map(i=>i.value);
-    await Promise.all([
-      ...checked.map(id => sb.from('apps').update({ section_id: secId }).eq('id', id)),
-      ...unchecked.map(id => sb.from('apps').update({ section_id: null }).eq('id', id).eq('section_id', secId)),
-    ]);
+    const checked = [...document.querySelectorAll('#section-apps-checklist input:checked')].map(i => i.value);
+    const current = state.appSections.filter(r => r.section_id === secId).map(r => r.app_id);
+    const toAdd = checked.filter(id => !current.includes(id));
+    const toDel = current.filter(id => !checked.includes(id));
+    if(toAdd.length){
+      let pos = nextPositionInSection(secId);
+      const { error } = await sb.from('app_sections').insert(
+        toAdd.map(aid => ({ app_id: aid, section_id: secId, position: pos++ })));
+      if(error) throw error;
+    }
+    if(toDel.length){
+      const { error } = await sb.from('app_sections').delete().eq('section_id', secId).in('app_id', toDel);
+      if(error) throw error;
+    }
     closeAllModals();
     await loadAll();
   } catch(err){
@@ -902,34 +1115,31 @@ $('save-section-btn').onclick = async () => {
 
 /* ---------------- DETAIL PAGE ---------------- */
 async function openDetailModal(appId){
-  const app = state.apps.find(a=>a.id===appId);
+  const app = state.apps.find(a => a.id === appId);
   if(!app) return;
   state.currentDetailApp = app;
   const isLink = app.link_type === 'link';
+
+  sb.rpc('increment_views', { p_app_id: app.id }).then(() => {}, () => {});
+  if(state.search.active && state.search.query.trim()) addRecent(state.search.mode, state.search.query);
 
   $('detail-icon').src = app.icon_url || '';
   $('detail-name').textContent = app.name;
   if(app.author && app.author.trim()){
     $('detail-author').textContent = 'Автор: ' + app.author;
     show($('detail-author'));
-  } else {
-    hide($('detail-author'));
-  }
+  } else { hide($('detail-author')); }
 
   const tags = app.tags || [];
-  $('detail-tags').innerHTML = tags.map(t=>`<span class="tag-chip">${escapeHtml(t)}</span>`).join('');
-  const tagsWrapEl = $('detail-tags-wrap');
-  tagsWrapEl.classList.remove('expanded');
+  $('detail-tags').innerHTML = tags.map(t => `<span class="tag-chip">${escapeHtml(t)}</span>`).join('');
   $('detail-tags').style.display = '-webkit-box';
   $('detail-tags').style.webkitLineClamp = '1';
   $('detail-tags').style.webkitBoxOrient = 'vertical';
   $('detail-tags').style.overflow = 'hidden';
   setTimeout(() => {
     const el = $('detail-tags');
-    if(el.scrollHeight > el.clientHeight + 4){
-      show($('tags-toggle-btn'));
-      $('tags-toggle-btn').textContent = 'Развернуть';
-    } else { hide($('tags-toggle-btn')); }
+    if(el.scrollHeight > el.clientHeight + 4){ show($('tags-toggle-btn')); $('tags-toggle-btn').textContent = 'Развернуть'; }
+    else { hide($('tags-toggle-btn')); }
   }, 30);
 
   $('detail-action-btn').textContent = isLink ? 'Перейти' : 'Скачать';
@@ -939,15 +1149,13 @@ async function openDetailModal(appId){
   $('stat-downloads').textContent = app.downloads_count || 0;
   $('stat-downloads-lbl').textContent = isLink ? 'Переходов' : 'Скачиваний';
 
-  $('detail-extra').innerHTML = (app.extra_images||[]).map(u=>`<img src="${u}" data-full="${u}">`).join('');
+  $('detail-extra').innerHTML = (app.extra_images || []).map(u => `<img src="${u}" data-full="${u}">`).join('');
   $('detail-extra').querySelectorAll('img').forEach(img => img.onclick = () => openImgViewer(img.dataset.full));
 
   if(app.update_note && app.update_note.trim()){
     $('detail-update-text').textContent = app.update_note;
     show($('detail-update-block'));
-  } else {
-    hide($('detail-update-block'));
-  }
+  } else { hide($('detail-update-block')); }
 
   $('detail-desc').textContent = app.description || '';
 
@@ -964,9 +1172,7 @@ async function openDetailModal(appId){
   maybeShowNotice(app);
 }
 
-function noticeDismissKey(app){
-  return `makplay_notice_dismissed_${app.id}_${app.note_updated_at || ''}`;
-}
+function noticeDismissKey(app){ return `makplay_notice_dismissed_${app.id}_${app.note_updated_at || ''}`; }
 function maybeShowNotice(app){
   if(!app.note_title && !app.note_text) return;
   const key = noticeDismissKey(app);
@@ -974,22 +1180,14 @@ function maybeShowNotice(app){
   $('notice-title-el').textContent = app.note_title || '';
   $('notice-text-el').textContent = app.note_text || '';
   show($('notice-modal-overlay'));
-  $('notice-close-x').onclick = () => {
-    localStorage.setItem(key, '1');
-    hide($('notice-modal-overlay'));
-  };
+  $('notice-close-x').onclick = () => { localStorage.setItem(key, '1'); hide($('notice-modal-overlay')); };
 }
 
 $('tags-toggle-btn').onclick = () => {
   const el = $('detail-tags');
   const expanded = el.style.webkitLineClamp === 'unset';
-  if(expanded){
-    el.style.webkitLineClamp = '1'; el.style.overflow='hidden';
-    $('tags-toggle-btn').textContent = 'Развернуть';
-  } else {
-    el.style.webkitLineClamp = 'unset'; el.style.overflow='visible';
-    $('tags-toggle-btn').textContent = 'Свернуть';
-  }
+  if(expanded){ el.style.webkitLineClamp = '1'; el.style.overflow = 'hidden'; $('tags-toggle-btn').textContent = 'Развернуть'; }
+  else { el.style.webkitLineClamp = 'unset'; el.style.overflow = 'visible'; $('tags-toggle-btn').textContent = 'Свернуть'; }
 };
 
 async function loadReviews(appId){
@@ -998,16 +1196,16 @@ async function loadReviews(appId){
   state.myReview = state.currentReviews.find(r => r.user_id === state.user.id) || null;
 
   const count = state.currentReviews.length;
-  const avg = count ? (state.currentReviews.reduce((s,r)=>s+r.rating,0)/count) : 0;
+  const avg = count ? (state.currentReviews.reduce((s, r) => s + r.rating, 0) / count) : 0;
   $('stat-rating').textContent = count ? avg.toFixed(1) : '—';
-  $('stat-reviews-count').textContent = count + (count===1?' отзыв':' отзывов');
+  $('stat-reviews-count').textContent = count + (count === 1 ? ' отзыв' : ' отзывов');
 
   $('reviews-list').innerHTML = state.currentReviews.map(r => `
-    <div class="review-item" data-review-id="${r.id}">
+    <div class="review-item">
       <div class="review-head">
         <span class="review-author">@${escapeHtml(r.username)}</span>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+          <span class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
           ${state.isAdmin ? `<button class="admin-mini-btn" data-del-review="${r.id}" title="Удалить отзыв">🗑</button>` : ''}
         </div>
       </div>
@@ -1025,19 +1223,17 @@ async function loadReviews(appId){
       };
     });
   }
-
   $('add-review-btn').textContent = state.myReview ? 'Изменить отзыв' : 'Оставить отзыв';
 }
 
 $('add-review-btn').onclick = () => {
   state.reviewStarValue = state.myReview?.rating || 0;
   $('review-text').value = state.myReview?.text || '';
-  $('review-char-count').textContent = ($('review-text').value||'').length;
-  $('review-error').textContent='';
+  $('review-char-count').textContent = ($('review-text').value || '').length;
+  $('review-error').textContent = '';
   renderStarPicker();
   show($('review-modal-overlay'));
 };
-
 function renderStarPicker(){
   $('review-star-picker').querySelectorAll('span').forEach(s => {
     s.classList.toggle('active', Number(s.dataset.v) <= state.reviewStarValue);
@@ -1049,8 +1245,8 @@ $('review-star-picker').querySelectorAll('span').forEach(s => {
 $('review-text').addEventListener('input', (e) => { $('review-char-count').textContent = e.target.value.length; });
 
 $('save-review-btn').onclick = async () => {
-  $('review-error').textContent='';
-  if(state.reviewStarValue < 1){ $('review-error').textContent='Выберите оценку (звёзды)'; return; }
+  $('review-error').textContent = '';
+  if(state.reviewStarValue < 1){ $('review-error').textContent = 'Выберите оценку (звёзды)'; return; }
   const text = $('review-text').value.trim();
   $('save-review-btn').disabled = true;
   try{
@@ -1074,37 +1270,29 @@ $('save-review-btn').onclick = async () => {
 };
 
 /* ---------------- IMAGE VIEWER ---------------- */
-let imgViewerState = { scale:1, x:0, y:0, lastDist:null, lastMid:null, dragging:false, startX:0, startY:0 };
-
+let imgViewerState = { scale:1, x:0, y:0, lastDist:null, dragging:false, startX:0, startY:0 };
+function applyImgViewerTransform(){
+  $('img-viewer-img').style.transform = `translate(${imgViewerState.x}px, ${imgViewerState.y}px) scale(${imgViewerState.scale})`;
+}
 function resetImgViewerTransform(){
   imgViewerState.scale = 1; imgViewerState.x = 0; imgViewerState.y = 0;
   applyImgViewerTransform();
 }
-function applyImgViewerTransform(){
-  const img = $('img-viewer-img');
-  img.style.transform = `translate(${imgViewerState.x}px, ${imgViewerState.y}px) scale(${imgViewerState.scale})`;
-}
-
 function openImgViewer(url){
   $('img-viewer-img').src = url;
   resetImgViewerTransform();
   show($('img-viewer'));
 }
 function closeImgViewer(){ hide($('img-viewer')); }
-
 $('img-viewer-close').onclick = (e) => { e.stopPropagation(); closeImgViewer(); };
 $('img-viewer').addEventListener('click', (e) => { if(e.target.id === 'img-viewer') closeImgViewer(); });
 
 (function setupImgViewerGestures(){
   const stage = $('img-viewer-stage');
-
-  function dist(t1, t2){ return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY); }
-  function mid(t1, t2){ return { x:(t1.clientX+t2.clientX)/2, y:(t1.clientY+t2.clientY)/2 }; }
-
+  const dist = (t1, t2) => Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
   stage.addEventListener('touchstart', (e) => {
     if(e.touches.length === 2){
       imgViewerState.lastDist = dist(e.touches[0], e.touches[1]);
-      imgViewerState.lastMid = mid(e.touches[0], e.touches[1]);
       imgViewerState.dragging = false;
     } else if(e.touches.length === 1){
       imgViewerState.dragging = true;
@@ -1112,16 +1300,14 @@ $('img-viewer').addEventListener('click', (e) => { if(e.target.id === 'img-viewe
       imgViewerState.startY = e.touches[0].clientY - imgViewerState.y;
     }
   }, { passive:true });
-
   stage.addEventListener('touchmove', (e) => {
     if(e.touches.length === 2){
       e.preventDefault();
-      const newDist = dist(e.touches[0], e.touches[1]);
+      const nd = dist(e.touches[0], e.touches[1]);
       if(imgViewerState.lastDist){
-        const factor = newDist / imgViewerState.lastDist;
-        imgViewerState.scale = Math.min(5, Math.max(1, imgViewerState.scale * factor));
+        imgViewerState.scale = Math.min(5, Math.max(1, imgViewerState.scale * (nd / imgViewerState.lastDist)));
       }
-      imgViewerState.lastDist = newDist;
+      imgViewerState.lastDist = nd;
       applyImgViewerTransform();
     } else if(e.touches.length === 1 && imgViewerState.dragging && imgViewerState.scale > 1){
       e.preventDefault();
@@ -1130,7 +1316,6 @@ $('img-viewer').addEventListener('click', (e) => { if(e.target.id === 'img-viewe
       applyImgViewerTransform();
     }
   }, { passive:false });
-
   stage.addEventListener('touchend', (e) => {
     if(e.touches.length < 2) imgViewerState.lastDist = null;
     if(e.touches.length === 0){
@@ -1138,10 +1323,8 @@ $('img-viewer').addEventListener('click', (e) => { if(e.target.id === 'img-viewe
       if(imgViewerState.scale <= 1.02) resetImgViewerTransform();
     }
   });
-
-  // double-tap to zoom (mobile) / double-click (desktop)
   let lastTap = 0;
-  stage.addEventListener('touchend', (e) => {
+  stage.addEventListener('touchend', () => {
     const now = Date.now();
     if(now - lastTap < 300){
       if(imgViewerState.scale > 1) resetImgViewerTransform();
@@ -1153,9 +1336,7 @@ $('img-viewer').addEventListener('click', (e) => { if(e.target.id === 'img-viewe
     if(imgViewerState.scale > 1) resetImgViewerTransform();
     else { imgViewerState.scale = 2.2; applyImgViewerTransform(); }
   });
-
-  // desktop: drag to pan when zoomed, wheel to zoom
-  let mouseDragging = false, mStartX=0, mStartY=0;
+  let mouseDragging = false, mStartX = 0, mStartY = 0;
   stage.addEventListener('mousedown', (e) => {
     if(imgViewerState.scale <= 1) return;
     mouseDragging = true; mStartX = e.clientX - imgViewerState.x; mStartY = e.clientY - imgViewerState.y;
@@ -1181,10 +1362,9 @@ function fmtDate(iso){
   const time = d.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' });
   return `${date} в ${time}`;
 }
-
 $('accounts-btn').onclick = async () => {
   const { data: profiles } = await sb.from('profiles').select('*').order('last_online', { ascending:false, nullsFirst:false });
-  $('accounts-list').innerHTML = (profiles||[]).map(p => `
+  $('accounts-list').innerHTML = (profiles || []).map(p => `
     <div class="acc-row">
       <div class="acc-info" style="flex:1;">
         <b style="font-size:15px;">@${escapeHtml(p.username)}</b>
@@ -1222,22 +1402,291 @@ $('logo-file-input').onchange = async (e) => {
   const file = e.target.files[0];
   if(!file) return;
   try{
+    const old = state.logoUrl;
     const url = await uploadToBucket('app-assets', file);
     await sb.from('app_settings').upsert({ key:'logo_url', value:url });
+    if(old) await removeFromStorage([old]);
     await loadAll();
   } catch(err){ alert('Ошибка загрузки: ' + err.message); }
+  e.target.value = '';
 };
+$('logo-remove-btn').onclick = () => {
+  if(!state.logoUrl) return;
+  openConfirm('Убрать картинку возле надписи Mak Play?', async () => {
+    const old = state.logoUrl;
+    await sb.from('app_settings').upsert({ key:'logo_url', value:'' });
+    await removeFromStorage([old]);
+    await loadAll();
+  });
+};
+
+/* ====================================================================
+   ПОИСК
+==================================================================== */
+const MODE_ICONS = { name:'🎮', tag:'#', section:'📁' };
+
+function norm(s){ return (s || '').toLowerCase().replace(/ё/g, 'е').trim(); }
+function lev(a, b){
+  const m = a.length, n = b.length;
+  if(!m) return n; if(!n) return m;
+  let prev = Array.from({ length:n + 1 }, (_, i) => i), cur = new Array(n + 1);
+  for(let i = 1; i <= m; i++){
+    cur[0] = i;
+    for(let j = 1; j <= n; j++){
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    [prev, cur] = [cur, prev];
+  }
+  return prev[n];
+}
+/* 0 = не похоже; 42..70 = похоже с ошибкой; 78..100 = прямое совпадение */
+function simScore(qRaw, tRaw){
+  const q = norm(qRaw), t = norm(tRaw);
+  if(!q || !t) return 0;
+  if(t === q) return 100;
+  if(t.startsWith(q)) return 92;
+  const words = t.split(/[\s\-_.,:;!?()]+/).filter(Boolean);
+  if(words.includes(q)) return 90;
+  if(words.some(w => w.startsWith(q))) return 85;
+  if(t.includes(q)) return 78;
+  if(q.length < 3) return 0;
+  let best = 0;
+  for(const c of [t, ...words]){
+    const s1 = 1 - lev(q, c) / Math.max(q.length, c.length);
+    const s2 = c.length > q.length ? (1 - lev(q, c.slice(0, q.length)) / q.length) * 0.95 : 0;
+    best = Math.max(best, s1, s2);
+  }
+  return best >= 0.6 ? best * 70 : 0;
+}
+const byViews = (a, b) => (b.views_count || 0) - (a.views_count || 0) || (b.downloads_count || 0) - (a.downloads_count || 0);
+
+function recentKey(mode){ return `makplay_recent_${state.user?.id || 'x'}_${mode}`; }
+function getRecents(mode){ try{ return JSON.parse(localStorage.getItem(recentKey(mode)) || '[]'); }catch(_){ return []; } }
+function addRecent(mode, q){
+  q = (q || '').trim();
+  if(!q) return;
+  const arr = getRecents(mode).filter(x => norm(x) !== norm(q));
+  arr.unshift(q);
+  localStorage.setItem(recentKey(mode), JSON.stringify(arr.slice(0, 10)));
+}
+
+function popularItems(mode){
+  if(mode === 'name'){
+    return [...state.apps].sort(byViews).map(a => ({ text:a.name }));
+  }
+  if(mode === 'tag'){
+    // каждая игра считается один раз, даже если она в нескольких разделах
+    const counts = new Map();
+    state.apps.forEach(a => {
+      const seen = new Set();
+      (a.tags || []).forEach(t => {
+        const k = norm(t);
+        if(!k || seen.has(k)) return;
+        seen.add(k);
+        const e = counts.get(k) || { text:t, count:0 };
+        e.count++; counts.set(k, e);
+      });
+    });
+    return [...counts.values()].sort((a, b) => b.count - a.count);
+  }
+  return state.sections.map(s => ({ text:s.title, count:appsInSection(s.id).length }))
+    .sort((a, b) => b.count - a.count);
+}
+function suggestionList(mode){
+  const rec = getRecents(mode).slice(0, 2).map(t => ({ text:t, recent:true }));
+  const recNorm = new Set(rec.map(r => norm(r.text)));
+  const pop = popularItems(mode).filter(p => !recNorm.has(norm(p.text)));
+  return [...rec, ...pop].slice(0, 5);
+}
+
+function renderSuggest(){
+  const box = $('search-suggest');
+  if(state.search.query.trim()){ box.innerHTML = ''; return; }
+  const mode = state.search.mode;
+  const items = suggestionList(mode);
+  box.innerHTML = items.map((it, i) => `
+    <button class="suggest-item" data-i="${i}">
+      <span class="suggest-ic">${it.recent ? '🕘' : MODE_ICONS[mode]}</span>
+      <span>${escapeHtml(it.text)}</span>
+    </button>`).join('') || '<div style="color:var(--muted);font-size:13px;padding:10px 4px;">Пока нечего показать</div>';
+  box.querySelectorAll('.suggest-item').forEach(btn => {
+    btn.onclick = () => setQuery(items[Number(btn.dataset.i)].text, true);
+  });
+}
+
+function setQuery(text, record){
+  $('search-input').value = text;
+  state.search.query = text;
+  if(record) addRecent(state.search.mode, text);
+  renderSuggest();
+  renderSearch();
+  $('search-input').blur();
+}
+
+function runSearch(){
+  const mode = state.search.mode;
+  const q = state.search.query.trim();
+  const res = { note:'', list:[], rest:[] };
+
+  if(mode === 'name'){
+    const scored = state.apps.map(a => ({ a, s:simScore(q, a.name) })).filter(x => x.s > 0)
+      .sort((x, y) => y.s - x.s || byViews(x.a, y.a));
+    if(!scored.length){
+      res.note = 'Ничего не найдено. Показаны все игры.';
+      res.list = [...state.apps].sort(byViews);
+    } else {
+      if(scored[0].s < 78) res.note = 'Возможно допущена ошибка. Показаны похожие игры.';
+      res.list = scored.map(x => x.a);
+    }
+    return res;
+  }
+
+  if(mode === 'tag'){
+    const scored = state.apps.map(a => ({
+      a, s:Math.max(0, ...(a.tags || []).map(t => simScore(q, t)))
+    }));
+    const matched = scored.filter(x => x.s > 0).sort((x, y) => y.s - x.s || byViews(x.a, y.a));
+    if(!matched.length){
+      res.note = 'Такого тега нет. Показаны все игры.';
+      res.list = [...state.apps].sort(byViews);
+    } else {
+      if(matched[0].s < 78) res.note = 'Возможно допущена ошибка. Сначала показаны игры с похожими тегами.';
+      res.list = matched.map(x => x.a);
+      res.rest = scored.filter(x => x.s <= 0).map(x => x.a).sort(byViews);
+    }
+    return res;
+  }
+
+  const scored = state.sections.map(s => ({ s, sc:simScore(q, s.title), n:appsInSection(s.id).length }));
+  const matched = scored.filter(x => x.sc > 0).sort((x, y) => y.sc - x.sc || y.n - x.n);
+  if(!matched.length){
+    res.note = 'Такого раздела нет. Показаны все разделы.';
+    res.list = [...scored].sort((x, y) => y.n - x.n).map(x => x.s);
+  } else {
+    if(matched[0].sc < 78) res.note = 'Возможно допущена ошибка. Сначала показаны похожие разделы.';
+    res.list = matched.map(x => x.s);
+    res.rest = scored.filter(x => x.sc <= 0).sort((x, y) => y.n - x.n).map(x => x.s);
+  }
+  return res;
+}
+
+function renderSearch(){
+  const box = $('search-results');
+  box.innerHTML = '';
+  if(!state.search.active || !state.search.query.trim()) return;
+  const r = runSearch();
+  if(r.note){
+    const n = document.createElement('div');
+    n.className = 'search-note'; n.textContent = r.note;
+    box.appendChild(n);
+  }
+  const addLabel = (t) => { const l = document.createElement('div'); l.className = 'search-label'; l.textContent = t; box.appendChild(l); };
+
+  if(state.search.mode === 'section'){
+    r.list.forEach(sec => box.appendChild(buildSection(sec, { search:true })));
+    if(r.rest.length){
+      addLabel('Остальные разделы');
+      r.rest.forEach(sec => box.appendChild(buildSection(sec, { search:true })));
+    }
+  } else {
+    const grid = document.createElement('div'); grid.className = 'apps-grid';
+    r.list.forEach(a => grid.appendChild(renderAppCard(a)));
+    box.appendChild(grid);
+    if(r.rest.length){
+      addLabel('Остальные игры');
+      const g2 = document.createElement('div'); g2.className = 'apps-grid';
+      r.rest.forEach(a => g2.appendChild(renderAppCard(a)));
+      box.appendChild(g2);
+    }
+  }
+}
+
+function updateHeaderH(){
+  document.documentElement.style.setProperty('--header-h', $('main-header').offsetHeight + 'px');
+}
+window.addEventListener('resize', updateHeaderH);
+
+function setMode(m){
+  state.search.mode = m;
+  document.querySelectorAll('#search-dropdown .chip').forEach(c => c.classList.toggle('active', c.dataset.mode === m));
+  renderSuggest();
+  renderSearch();
+}
+
+function enterSearch(){
+  if(state.search.active) return;
+  state.search.active = true;
+  state.search.openSections = new Set();
+  document.body.classList.add('searching');
+  updateHeaderH();
+  $('search-sticky').appendChild($('search-ui'));
+  show($('search-sticky'));
+  show($('search-dropdown'));
+  show($('search-close'));
+  hide($('sections-wrap'));
+  show($('search-results'));
+  setMode('name');
+  $('search-input').focus();
+}
+
+function exitSearch(){
+  if(!state.search.active) return;
+  state.search.active = false;
+  state.search.query = '';
+  $('search-input').value = '';
+  $('search-input').blur();
+  $('search-slot').appendChild($('search-ui'));
+  hide($('search-sticky'));
+  hide($('search-dropdown'));
+  hide($('search-close'));
+  document.body.classList.remove('searching');
+  hide($('search-results'));
+  $('search-results').innerHTML = '';
+  show($('sections-wrap'));
+}
+
+$('search-input').addEventListener('focus', enterSearch);
+$('search-ui').querySelector('.search-ic').addEventListener('click', () => { enterSearch(); $('search-input').focus(); });
+$('search-close').addEventListener('click', (e) => { e.stopPropagation(); exitSearch(); });
+$('search-sticky').addEventListener('click', (e) => { if(e.target === $('search-sticky')) exitSearch(); });
+document.querySelectorAll('#search-dropdown .chip').forEach(c => c.addEventListener('click', () => setMode(c.dataset.mode)));
+
+let searchTimer = null;
+$('search-input').addEventListener('input', (e) => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    state.search.query = e.target.value;
+    renderSuggest();
+    renderSearch();
+  }, 120);
+});
+$('search-input').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){
+    state.search.query = e.target.value;
+    addRecent(state.search.mode, e.target.value);
+    renderSuggest();
+    renderSearch();
+    e.target.blur();
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if(e.key !== 'Escape') return;
+  if(!$('img-viewer').classList.contains('hidden')){ closeImgViewer(); return; }
+  if(document.querySelector('.modal-overlay:not(.hidden)')) return;
+  exitSearch();
+});
 
 /* ---------------- INIT ---------------- */
 (async function init(){
-  if(SUPABASE_URL.includes('YOUR_SUPABASE')){
-    $('boot-loading').innerHTML = 'Сначала вставьте SUPABASE_URL и SUPABASE_ANON_KEY в файле mak-play.html.';
+  if(!sb){
+    $('boot-loading').innerHTML = 'Сначала вставьте SUPABASE_URL и SUPABASE_ANON_KEY в начале блока &lt;script&gt; в файле.';
     return;
   }
   const { data:{ session } } = await sb.auth.getSession();
   hide($('boot-loading'));
   if(session){ await afterAuth(); } else { show($('auth-screen')); }
 })();
+
 </script>
 </body>
 </html>
